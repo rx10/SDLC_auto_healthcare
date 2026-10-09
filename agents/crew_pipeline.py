@@ -80,12 +80,30 @@ AGENTS = [
         ),
     },
     {
+        "key": "devops",
+        "name": "DevOps Engineer",
+        "role": "DevOps Engineer",
+        "system": (
+            "You are a healthcare DevOps engineer. Build on the requirements, "
+            "architecture, implementation, and QA plan. Produce a practical "
+            "deployment and operations plan for the Python backend and Streamlit UI: "
+            "Dockerfile and CI/CD workflow snippets, automated test and security gates, "
+            "environment configuration and secret management, infrastructure, "
+            "health checks, monitoring and alerting, PHI-safe logging, backups and "
+            "restore verification, release rollout and rollback steps. Address the "
+            "availability requirement and HIPAA-aware access controls without "
+            "claiming compliance is guaranteed. State assumptions and distinguish "
+            "proposed configuration from executed deployment."
+        ),
+    },
+    {
         "key": "docs",
         "name": "Technical Writer",
         "role": "Technical Writer",
         "system": (
             "You are a technical writer skilled at Word-ready documentation. "
-            "Produce SDLC process summary and release notes."
+            "Produce SDLC process summary and release notes, including the DevOps "
+            "deployment, operations, and rollback guidance."
         ),
     },
 ]
@@ -288,12 +306,13 @@ def _run_with_groq(requirement: str, context: str) -> dict[str, str]:
             f"Healthcare software requirement:\n{requirement}\n\n"
             f"Domain + Wikipedia context:\n{context}\n\n"
             f"{_truncate(fb, 600)}\n\n"
-            f"Prior agent outputs:\n{_truncate(history, 3500) or '(none yet)'}\n\n"
+            f"Prior agent outputs:\n{history or '(none yet)'}\n\n"
             f"Produce your deliverable as {spec['role']}."
         )
         output = _chat(client, spec["system"], user)
         artifacts[spec["name"]] = output
-        history += f"\n\n### {spec['name']}\n{_truncate(output, 1200)}"
+        # Reserve space for every prior role, including DevOps for the writer.
+        history += f"\n\n### {spec['name']}\n{_truncate(output, 600)}"
     return artifacts
 
 

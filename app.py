@@ -30,25 +30,18 @@ def _apply_cloud_secrets() -> None:
 st.set_page_config(page_title="SDLC Automation", page_icon="🏥", layout="wide")
 _apply_cloud_secrets()
 
-from agents.crew_pipeline import run_sdlc_pipeline
+from agents.crew_pipeline import AGENTS, run_sdlc_pipeline
 from feedback.store import load_feedback, save_feedback
 
 st.title("Healthcare SDLC Automation")
-st.caption("5-agent SDLC flow · Domain RAG · Wikipedia · Observability · Feedback")
+st.caption(f"{len(AGENTS)}-agent SDLC flow · Domain RAG · Wikipedia · Observability · Feedback")
 
 with st.sidebar:
     st.header("Settings")
     wiki_topic = st.text_input("Wikipedia topic", value="electronic health record")
-    st.markdown(
-        """
-**Agents**
-1. Business Analyst  
-2. Solution Architect  
-3. Full-Stack Developer (Python + Streamlit)  
-4. QA Engineer  
-5. Technical Writer (Word release notes)
-"""
-    )
+    st.markdown("**Agents**\n" + "\n".join(
+        f"{index}. {spec['name']}  " for index, spec in enumerate(AGENTS, start=1)
+    ))
     prior = load_feedback(10)
     st.subheader("Recent feedback")
     if prior:
@@ -82,7 +75,7 @@ if run_clicked:
     elif not requirement.strip():
         st.error("Please enter a requirement.")
     else:
-        with st.spinner("Running 5-agent SDLC crew (this may take a few minutes)..."):
+        with st.spinner(f"Running {len(AGENTS)}-agent SDLC crew (this may take a few minutes)..."):
             result = run_sdlc_pipeline(requirement.strip(), wiki_topic=wiki_topic.strip() or "electronic health record")
         st.session_state["last_result"] = result
 
@@ -155,13 +148,7 @@ These are heuristic audit scores for traceability (not model-native logits).
 
         with tab_fb:
             st.write("Rate an agent response. Feedback is reused on the next run.")
-            agents = list(result.get("artifacts", {}).keys()) or [
-                "Business Analyst",
-                "Solution Architect",
-                "Full-Stack Developer",
-                "QA Engineer",
-                "Technical Writer",
-            ]
+            agents = list(result.get("artifacts", {}).keys()) or [spec["name"] for spec in AGENTS]
             agent = st.selectbox("Agent", agents)
             rating = st.slider("Rating", 1, 5, 4)
             comment = st.text_input("Feedback comment", placeholder="Be more specific about HIPAA controls")
